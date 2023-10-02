@@ -17,7 +17,7 @@ You should have received a copy of the GNU Lesser General Public
 License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
-
+#ifdef CSP_ROUTE_CIDR
 #include "csp_rtable_internal.h"
 
 #include <csp/csp_debug.h>
@@ -131,8 +131,13 @@ int csp_rtable_set_internal(uint8_t address, uint8_t netmask, csp_iface_t *ifc, 
 }
 
 void csp_rtable_free(void) {
+#ifdef CSP_HERCULES
+    csp_rtable_t * i;
+	for (i = rtable; (i);) {
+#else
 	for (csp_rtable_t * i = rtable; (i);) {
-		void * freeme = i;
+#endif
+	    void * freeme = i;
 		i = i->next;
 		csp_free(freeme);
 	}
@@ -141,7 +146,13 @@ void csp_rtable_free(void) {
 
 void csp_rtable_iterate(csp_rtable_iterator_t iter, void * ctx)
 {
+#ifdef CSP_HERCULES
+    csp_rtable_t * route;
+    for (route = rtable;
+#else
     for (csp_rtable_t * route = rtable;
-         route && iter(ctx, route->address, route->netmask, &route->route);
+#endif
+      route && iter(ctx, route->address, route->netmask, &route->route);
          route = route->next);
 }
+#endif

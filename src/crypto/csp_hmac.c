@@ -83,6 +83,10 @@ static int csp_hmac_process(hmac_state * hmac, const uint8_t * in, uint32_t inle
 
 static int csp_hmac_done(hmac_state * hmac, uint8_t * out) {
 
+#ifdef CSP_HERCULES
+    int i;
+#endif
+
 	if (!hmac || !out)
 		return CSP_ERR_INVAL;
 
@@ -92,7 +96,11 @@ static int csp_hmac_done(hmac_state * hmac, uint8_t * out) {
 
 	/* Create the second HMAC vector vector */
 	uint8_t buf[CSP_SHA1_BLOCKSIZE];
+#ifdef CSP_HERCULES
+	for(i = 0; i < sizeof(buf); i++) {
+#else
 	for(unsigned int i = 0; i < sizeof(buf); i++) {
+#endif
 		buf[i] = hmac->key[i] ^ 0x5C;
 	}
 

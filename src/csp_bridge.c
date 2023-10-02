@@ -90,9 +90,17 @@ static CSP_DEFINE_TASK(csp_bridge) {
 // GomSpace
 static bool is_zmq_interface(const char * ifname)
 {
+#ifdef CSP_HERCULES
+    unsigned int i;
+#endif
 	if (ifname) {
 		// if the interface contains zmq, we assume it is a ZMQ interface
+#ifndef CSP_HERCULES
 		for (unsigned int i = 0; i < strlen(ifname); ++i) {
+#else
+	    for (i = 0; i < strlen(ifname); ++i) {
+#endif
+
                     if (strncasecmp(&ifname[i], "zmq", 3) == 0 ) {
 				return true;
 			}

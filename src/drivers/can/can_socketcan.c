@@ -17,7 +17,7 @@ You should have received a copy of the GNU Lesser General Public
 License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
-
+#ifdef CSP_POSIX
 #include <csp/drivers/can_socketcan.h>
 
 #include <pthread.h>
@@ -235,3 +235,4 @@ int csp_can_socketcan_stop(csp_iface_t *iface)
         socketcan_free(ctx);
 	return CSP_ERR_NONE;
 }
+#endif

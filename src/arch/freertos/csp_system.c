@@ -21,7 +21,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <csp/arch/csp_system.h>
 
 #include <FreeRTOS.h>
+#if CSP_HERCULES
+#include <os_task.h>
+#else
 #include <task.h> // FreeRTOS
+#endif // CSP_HERCULES
 
 #include <csp/csp_debug.h>
 

@@ -97,7 +97,11 @@ typedef HANDLE csp_mutex_t;
 #if (CSP_FREERTOS)
 
 #include <FreeRTOS.h>
+#if CSP_HERCULES
+#include <os_semphr.h>
+#else
 #include <semphr.h>
+#endif // CSP_HERCULES
 
 #define CSP_SEMAPHORE_OK 	pdPASS
 #define CSP_SEMAPHORE_ERROR	pdFAIL

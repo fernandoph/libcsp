@@ -38,13 +38,19 @@ static int csp_dedup_in = 0;
 
 bool csp_dedup_is_duplicate(csp_packet_t *packet)
 {
+#ifdef CSP_HERCULES
+    int i;
+#endif
 	/* Calculate CRC32 for packet */
 	uint32_t crc = csp_crc32_memory((const uint8_t *) &packet->id, packet->length + sizeof(packet->id));
 
 	/* Check if we have received this packet before */
+#ifndef CSP_HERCULES
 	for (int i = 0; i < CSP_DEDUP_COUNT; i++) {
-
-		/* Check for match */
+#else
+	for (i = 0; i < CSP_DEDUP_COUNT; i++) {
+#endif
+	    /* Check for match */
 		if (crc == csp_dedup_array[i]) {
 
 			/* Check the timestamp */

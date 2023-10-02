@@ -17,7 +17,7 @@ You should have received a copy of the GNU Lesser General Public
 License along with this library; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 */
-
+#ifdef CSP_POSIX
 #ifndef _PTHREAD_QUEUE_H_
 #define _PTHREAD_QUEUE_H_
 
@@ -110,5 +110,6 @@ int pthread_queue_items(pthread_queue_t * queue);
 
 #ifdef __cplusplus
 }
+#endif
 #endif
 #endif

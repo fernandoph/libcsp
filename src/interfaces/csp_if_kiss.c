@@ -33,6 +33,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 int csp_kiss_tx(const csp_route_t * ifroute, csp_packet_t * packet) {
 
+#ifdef CSP_HERCULES
+    unsigned int i;
+#endif
 	csp_kiss_interface_data_t * ifdata = ifroute->iface->interface_data;
 	void * driver = ifroute->iface->driver_data;
 
@@ -54,8 +57,12 @@ int csp_kiss_tx(const csp_route_t * ifroute, csp_packet_t * packet) {
         const unsigned char esc_esc[] = {FESC, TFESC};
         const unsigned char * data = (unsigned char *) &packet->id.ext;
         ifdata->tx_func(driver, start, sizeof(start));
+#ifndef CSP_HERCULES
 	for (unsigned int i = 0; i < packet->length; i++, ++data) {
-		if (*data == FEND) {
+#else
+    for (i = 0; i < packet->length; i++, ++data) {
+#endif
+        if (*data == FEND) {
                     ifdata->tx_func(driver, esc_end, sizeof(esc_end));
                     continue;
 		}

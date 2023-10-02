@@ -94,7 +94,9 @@ int csp_conn_enqueue_packet(csp_conn_t * conn, csp_packet_t * packet) {
 }
 
 int csp_conn_init(void) {
-
+#ifdef CSP_HERCULES
+    int i, prio;
+#endif
 	arr_conn = csp_calloc(csp_conf.conn_max, sizeof(*arr_conn));
 	if (arr_conn == NULL) {
 		csp_log_error("Allocation for %u connections failed", csp_conf.conn_max);
@@ -115,10 +117,18 @@ int csp_conn_init(void) {
 		return CSP_ERR_NOMEM;
 	}
 
+#ifndef CSP_HERCULES
 	for (int i = 0; i < csp_conf.conn_max; i++) {
-		csp_conn_t * conn = &arr_conn[i];
-		for (int prio = 0; prio < CSP_RX_QUEUES; prio++) {
-			conn->rx_queue[prio] = csp_queue_create(csp_conf.conn_queue_length, sizeof(csp_packet_t *));
+#else
+    for (i = 0; i < csp_conf.conn_max; i++) {
+#endif
+        csp_conn_t * conn = &arr_conn[i];
+#ifndef CSP_HERCULES
+        for (int prio = 0; prio < CSP_RX_QUEUES; prio++) {
+#else
+        for (prio = 0; prio < CSP_RX_QUEUES; prio++) {
+#endif
+            conn->rx_queue[prio] = csp_queue_create(csp_conf.conn_queue_length, sizeof(csp_packet_t *));
 			if (conn->rx_queue[prio] == NULL) {
 				csp_log_error("rx_queue = csp_queue_create() failed");
 				return CSP_ERR_NOMEM;
@@ -149,10 +159,20 @@ void csp_conn_free_resources(void) {
 
     if (arr_conn) {
 
-	for (unsigned int i = 0; i < csp_conf.conn_max; i++) {
-            csp_conn_t * conn = &arr_conn[i];
+#ifdef CSP_HERCULES
+        unsigned int i;
+        int prio;
+	for (i = 0; i < csp_conf.conn_max; i++) {
+#else
+	    for (unsigned int i = 0; i < csp_conf.conn_max; i++) {
+#endif
+	        csp_conn_t * conn = &arr_conn[i];
 
+#ifndef CSP_HERCULES
             for (int prio = 0; prio < CSP_RX_QUEUES; prio++) {
+#else
+            for (prio = 0; prio < CSP_RX_QUEUES; prio++) {
+#endif
                 if (conn->rx_queue[prio]) {
                     csp_queue_remove(conn->rx_queue[prio]);
                 }
@@ -186,8 +206,13 @@ csp_conn_t * csp_conn_find(uint32_t id, uint32_t mask) {
 
 	/* Search for matching connection */
 	id = (id & mask);
-	for (int i = 0; i < csp_conf.conn_max; i++) {
-		csp_conn_t * conn = &arr_conn[i];
+#ifdef CSP_HERCULES
+	int i;
+	for (i = 0; i < csp_conf.conn_max; i++) {
+#else
+    for (int i = 0; i < csp_conf.conn_max; i++) {
+#endif
+        csp_conn_t * conn = &arr_conn[i];
 		if ((conn->state == CONN_OPEN) && (conn->type == CONN_CLIENT) && ((conn->idin.ext & mask) == id)) {
 			return conn;
 		}
@@ -222,6 +247,10 @@ static int csp_conn_flush_rx_queue(csp_conn_t * conn) {
 
 csp_conn_t * csp_conn_allocate(csp_conn_type_t type) {
 
+#ifdef CSP_HERCULES
+    int j;
+#endif
+
 	static uint8_t csp_conn_last_given = 0;
 
 	if (csp_bin_sem_wait(&conn_lock, CSP_MAX_TIMEOUT) != CSP_SEMAPHORE_OK) {
@@ -232,8 +261,12 @@ csp_conn_t * csp_conn_allocate(csp_conn_type_t type) {
 	/* Search for free connection */
 	csp_conn_t * conn = NULL;
 	int i = csp_conn_last_given;
+#ifndef CSP_HERCULES
 	for (int j = 0; j < csp_conf.conn_max; j++) {
-		i = (i + 1) % csp_conf.conn_max;
+#else
+    for (j = 0; j < csp_conf.conn_max; j++) {
+#endif
+        i = (i + 1) % csp_conf.conn_max;
 		conn = &arr_conn[i];
 		if (conn->state == CONN_CLOSED) {
 			break;

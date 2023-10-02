@@ -28,12 +28,19 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "../csp_init.h"
 
+#include <strings.h>
+#include <string.h>
+
 static int csp_rtable_parse(const char * rtable, int dry_run) {
 
 	int valid_entries = 0;
 
 	/* Copy string before running strtok */
+#ifndef CSP_HERCULES
 	const size_t str_len = strnlen(rtable, 100);
+#else
+	const size_t str_len = strlen(rtable);
+#endif
 	char rtable_copy[str_len + 1];
 	strncpy(rtable_copy, rtable, str_len);
 	rtable_copy[str_len] = 0;        
@@ -41,6 +48,7 @@ static int csp_rtable_parse(const char * rtable, int dry_run) {
 	/* Get first token */
 	char * saveptr;
 	char * str = strtok_r(rtable_copy, ",", &saveptr);
+
 	while ((str) && (strlen(str) > 1)) {
 		unsigned int address, netmask, via;
 		char name[15];

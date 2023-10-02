@@ -30,10 +30,14 @@ static csp_queue_handle_t qfifo_events;
 #endif
 
 int csp_qfifo_init(void) {
-
+#ifdef CSP_HERCULES
+    int prio;
 	/* Create router fifos for each priority */
-	for (int prio = 0; prio < CSP_ROUTE_FIFOS; prio++) {
-		if (qfifo[prio] == NULL) {
+    for (prio = 0; prio < CSP_ROUTE_FIFOS; prio++) {
+#else
+    for (int prio = 0; prio < CSP_ROUTE_FIFOS; prio++) {
+#endif
+        if (qfifo[prio] == NULL) {
 			qfifo[prio] = csp_queue_create(csp_conf.fifo_length, sizeof(csp_qfifo_t));
 			if (!qfifo[prio])
 				return CSP_ERR_NOMEM;
@@ -53,9 +57,13 @@ int csp_qfifo_init(void) {
 }
 
 void csp_qfifo_free_resources(void) {
-
-	for (int prio = 0; prio < CSP_ROUTE_FIFOS; prio++) {
-		if (qfifo[prio]) {
+#ifdef CSP_HERCULES
+    int prio;
+    for (prio = 0; prio < CSP_ROUTE_FIFOS; prio++) {
+#else
+    for (int prio = 0; prio < CSP_ROUTE_FIFOS; prio++) {
+#endif
+        if (qfifo[prio]) {
 			csp_queue_remove(qfifo[prio]);
 			qfifo[prio] = NULL;
 		}

@@ -41,6 +41,10 @@ csp_iface_t * csp_iflist_get_by_name(const char *name) {
 
 int csp_iflist_add(csp_iface_t *ifc) {
 
+#ifdef CSP_HERCULES
+    csp_iface_t * i;
+#endif
+
 	ifc->next = NULL;
 
 	/* Add interface to pool */
@@ -50,7 +54,11 @@ int csp_iflist_add(csp_iface_t *ifc) {
 	} else {
 		/* Insert interface last if not already in pool */
 		csp_iface_t * last = NULL;
-		for (csp_iface_t * i = interfaces; i != NULL; i = i->next) {
+#ifdef CSP_HERCULES
+		for (i = interfaces; i != NULL; i = i->next) {
+#else
+	    for (csp_iface_t * i = interfaces; i != NULL; i = i->next) {
+#endif
 			if ((i == ifc) || (strncasecmp(ifc->name, i->name, CSP_IFLIST_NAME_MAX) == 0)) {
 				return CSP_ERR_ALREADY;
 			}

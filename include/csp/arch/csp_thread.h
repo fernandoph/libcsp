@@ -91,7 +91,11 @@ typedef csp_thread_return_t (* csp_thread_func_t)(void *) __attribute__((stdcall
 #if (CSP_FREERTOS)
 
 #include <FreeRTOS.h>
+#if CSP_HERCULES
+#include <os_task.h>
+#else
 #include <task.h>
+#endif // CSP_HERCULES
 
 typedef xTaskHandle csp_thread_handle_t;
 typedef void csp_thread_return_t;

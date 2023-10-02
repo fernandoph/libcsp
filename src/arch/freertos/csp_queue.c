@@ -21,7 +21,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <csp/arch/csp_queue.h>
 
 #include <FreeRTOS.h>
+#if CSP_HERCULES
+#include <os_queue.h>
+#else
 #include <queue.h> // FreeRTOS
+#endif //CSP_HERCULES
 
 csp_queue_handle_t csp_queue_create(int length, size_t item_size) {
 	return xQueueCreate(length, item_size);

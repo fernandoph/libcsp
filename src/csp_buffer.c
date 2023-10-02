@@ -41,6 +41,7 @@ static csp_queue_handle_t csp_buffers;
 // Chunk of memory allocated for CSP buffers
 static char * csp_buffer_pool;
 
+
 // Ensure the csp_packet is correctly aligned (as it is not packed)
 CSP_STATIC_ASSERT(CSP_HEADER_LENGTH == sizeof(csp_id_t), csp_header_length);
 CSP_STATIC_ASSERT(sizeof(csp_packet_t) == 16, csp_packet);
@@ -49,6 +50,9 @@ CSP_STATIC_ASSERT(offsetof(csp_packet_t, id) == 12, csp_id_field_misaligned);
 CSP_STATIC_ASSERT(offsetof(csp_packet_t, data) == 16, data_field_misaligned);
 
 int csp_buffer_init(void) {
+#ifdef CSP_HERCULES
+    int i;
+#endif
 
 	// calculate total size and ensure correct alignment (int *) for buffers
 	const unsigned int skbfsize = CSP_BUFFER_ALIGN * ((sizeof(csp_skbf_t) + csp_buffer_size() + (CSP_BUFFER_ALIGN - 1)) / CSP_BUFFER_ALIGN);
@@ -61,7 +65,11 @@ int csp_buffer_init(void) {
 	if (!csp_buffers)
 		goto fail_queue;
 
+#ifdef CSP_HERCULES
+	for (i = 0; i < csp_conf.buffers; i++) {
+#else
 	for (unsigned int i = 0; i < csp_conf.buffers; i++) {
+#endif
 		csp_skbf_t * buf = (void *) &csp_buffer_pool[i * skbfsize];
 		buf->skbf_addr = buf;
 		csp_queue_enqueue(csp_buffers, &buf, 0);
@@ -83,7 +91,7 @@ void csp_buffer_free_resources(void) {
 		csp_buffers = NULL;
 	}
 	csp_free(csp_buffer_pool);
-	csp_buffer_pool = NULL;
+//	csp_buffer_pool = NULL;
 
 }
 

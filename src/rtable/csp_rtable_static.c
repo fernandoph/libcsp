@@ -59,9 +59,13 @@ void csp_rtable_free(void) {
 }
 
 void csp_rtable_iterate(csp_rtable_iterator_t iter, void * ctx) {
-
-	for (unsigned int i = 0; i < CSP_DEFAULT_ROUTE; ++i) {
-		if (rtable[i].iface != NULL) {
+#ifdef CSP_HERCULES
+    unsigned int i;
+    for (i = 0; i < CSP_DEFAULT_ROUTE; ++i) {
+#else
+    for (unsigned int i = 0; i < CSP_DEFAULT_ROUTE; ++i) {
+#endif
+        if (rtable[i].iface != NULL) {
 			if (iter(ctx, i, CSP_ID_HOST_SIZE, &rtable[i]) == false) {
 				return; // stopped by user
 			}
