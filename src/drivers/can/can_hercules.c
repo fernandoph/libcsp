@@ -5,6 +5,7 @@
 */
 
 // Includes
+#include <stdlib.h>
 #include <csp/csp.h>
 #include <csp/interfaces/csp_if_can.h>
 #include <csp/csp_iflist.h>
@@ -76,153 +77,6 @@ strtok_r (char *s, const char *delim, char **save_ptr)
   return s;
 }
 
-
-/* CAN driver functions */
-
-/*
-    @brief  Initialize CAN driver
-    @return 0 on success, -1 on error
-*/
-int can_myinit(void)
-{
-    /** @b Initialize @b CAN1: */
-
-    /** - Setup control register
-    *     - Disable automatic wakeup on bus activity
-    *     - Local power down mode disabled
-    *     - Disable DMA request lines
-    *     - Enable global Interrupt Line 0 and 1
-    *     - Disable debug mode
-    *     - Release from software reset
-    *     - Enable/Disable parity or ECC
-    *     - Enable/Disable auto bus on timer
-    *     - Setup message completion before entering debug state
-    *     - Setup normal operation mode
-    *     - Request write access to the configuration registers
-    *     - Setup automatic retransmission of messages
-    *     - Disable error interrupts
-    *     - Disable status interrupts
-    *     - Enter initialization mode
-    */
-    canREG1->CTL = (uint32)0x00000000U 
-                 | (uint32)0x00000000U 
-                 | (uint32)((uint32)0x00000005U  << 10U)
-                 | (uint32)0x00020043U;
-
-    /** - Clear all pending error flags and reset current status */
-    canREG1->ES |= 0xFFFFFFFFU;
-
-    /** - Assign interrupt level for messages */
-    canREG1->INTMUXx[0U] = (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U;
-
-    canREG1->INTMUXx[1U] = (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U
-                         | (uint32)0x00000000U;
-
-    /** - Setup auto bus on timer period */
-    canREG1->ABOTR = (uint32)0U;
-
-    /** - Initialize message 1 
-    *     - Wait until IF1 is ready for use 
-    *     - Set message mask
-    *     - Set message control word
-    *     - Set message arbitration
-    *     - Set IF1 control byte
-    *     - Set IF1 message number
-    */
-    /*SAFETYMCUSW 28 D MR:NA <APPROVED> "Potentially infinite loop found - Hardware Status check for execution sequence" */
-    while ((canREG1->IF1STAT & 0x80U) ==0x80U)
-    { 
-    } /* Wait */
-
-
-    canREG1->IF1MSK  = 0x00000000U;
-    canREG1->IF1ARB  = (uint32)0x80000000U | (uint32)0x40000000U | (uint32)0x20000000U | (uint32)((uint32)((uint32)1U & (uint32)0x1FFFFFFFU) << (uint32)0U);
-    canREG1->IF1MCTL = 0x00001000U | (uint32)0x00000000U | (uint32)0x00000000U | (uint32)0x00000000U | (uint32)8U;
-    canREG1->IF1CMD  = (uint8) 0xF8U;
-    canREG1->IF1NO   = 1U;
-
-    /** - Initialize message 2 
-    *     - Wait until IF2 is ready for use 
-    *     - Set message mask
-    *     - Set message control word
-    *     - Set message arbitration
-    *     - Set IF2 control byte
-    *     - Set IF2 message number
-    */
-    /*SAFETYMCUSW 28 D MR:NA <APPROVED> "Potentially infinite loop found - Hardware Status check for execution sequence" */
-    while ((canREG1->IF2STAT & 0x80U) ==0x80U)
-    { 
-    } /* Wait */
-
-    canREG1->IF2MSK  = 0xC0000000U | (uint32)((uint32)((uint32)0x000007FFU & (uint32)0x1FFFFFFFU) << (uint32)0U);
-    canREG1->IF2ARB  = (uint32)0x80000000U | (uint32)0x40000000U | (uint32)0x00000000U | (uint32)((uint32)((uint32)2U & (uint32)0x1FFFFFFFU) << (uint32)0U);
-    canREG1->IF2MCTL = 0x00001000U | (uint32)0x00000400U | (uint32)0x00000000U | (uint32)0x00000000U | (uint32)8U;
-    canREG1->IF2CMD  = (uint8) 0xF8U;
-    canREG1->IF2NO   = 2U;
-
-}
-
 /*
     @brief   Open Can Channel and add CSP Interface
     @param[in] name Interface name
@@ -234,7 +88,10 @@ int csp_can_hercules_add_interface ( const char * ifname,
                                             canBASE_t  * canRegister, 
                                             uint8_t      canMessageBox)
 {
-    can_context_t * ctx = calloc(1, sizeof(*ctx));
+    can_context_t * ctx = calloc((size_t) 1, sizeof(*ctx));
+    if (ctx == NULL) {
+            return CSP_ERR_NOMEM;
+        }
     int res = -1;
 
     strncpy(ctx->name, ifname, sizeof(ctx->name) - 1);
@@ -260,10 +117,11 @@ int csp_can_hercules_add_interface ( const char * ifname,
     if (rxTaskHandler != NULL)
     {
         ctx->rxTaskHandler = rxTaskHandler;
+        // Para libscp for gomspace
         res = csp_can_add_interface(&ctx->iface);
 
-        csp_route_set(0, &ctx->iface, NULL);
-
+        csp_rtable_set(CSP_DEFAULT_ROUTE, 0, &ctx->iface, CSP_NO_VIA_ADDRESS);
+        //csp_rtable_set(0, 0, &ctx->iface, CSP_NO_VIA_ADDRESS);
         // Para libcsp de libcsp.org usamos esto
         // Set this as the default interface
       // csp_iflist_set_default(&ctx->iface);
@@ -275,7 +133,7 @@ int csp_can_hercules_add_interface ( const char * ifname,
 static void csp_hercules_can_rx_task(void * pvParameters)
 {
 
-    canUpdateID(canREG1, canMESSAGE_BOX1, 0x30000004);
+    //canUpdateID(canREG1, canMESSAGE_BOX1, 0x30000004);
     while(1)
     {
         vTaskDelay(1000);
@@ -317,7 +175,8 @@ static int csp_can_hercules_tx_frame (void * driver_data, uint32_t id,
     //      Xtd = 1 Extended 25 bit identifier
     //      Dir = 1 Transmit mail box
     //      ID 1 Message ID 0x1
-    canREG1->IF1ARB = 0x80000000U | 0x40000000U | 0x20000000U | ((1U & 0x1FFFFFFFU) << 0U) ;
+    //canREG1->IF1ARB = 0x80000000U | 0x40000000U | 0x20000000U | ((1U & 0x1FFFFFFFU) << 0U) ;
+    canREG1->IF1ARB = 0x80000000U | 0x40000000U | 0x20000000U | ((11U & 0x1FFFFFFFU) << 0U) ;
 
     // Configure message control register.
     //      UMask = 1 Use mask for filtering
@@ -335,8 +194,8 @@ static int csp_can_hercules_tx_frame (void * driver_data, uint32_t id,
 
     for (i = 0U; i < 8U; i++)
     {
-        canREG1->IF1DATx[s_canByteOrder[i]] = *data;
-        //canREG1->IF1DATx[i] = *data;
+        //canREG1->IF1DATx[s_canByteOrder[i]] = *data;
+        canREG1->IF1DATx[i] = *data;
         data++;
     }
 
