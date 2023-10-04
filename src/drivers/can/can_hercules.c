@@ -168,7 +168,8 @@ static int csp_can_hercules_tx_frame (void * driver_data, uint32_t id,
     //      MXtd = 1 Use Extended ID Mask
     //      MDir = 1 Use message direction mask
     //      Msk = 0x7FF Use bits 10:0 for filtering
-    canREG1->IF1MSK = 0xC0000000U | ((0x000007FFU & 0x1FFFFFFFU) << 0U);
+    //canREG1->IF1MSK = 0xC0000000U | ((0x000007FFU & 0x1FFFFFFFU) << 0U);
+    canREG1->IF1MSK = 0x0U; // Disable all filtering
 
     // Configure arbitration register.
     //      MsgVal = 1 Enable the message object
@@ -176,7 +177,13 @@ static int csp_can_hercules_tx_frame (void * driver_data, uint32_t id,
     //      Dir = 1 Transmit mail box
     //      ID 1 Message ID 0x1
     //canREG1->IF1ARB = 0x80000000U | 0x40000000U | 0x20000000U | ((1U & 0x1FFFFFFFU) << 0U) ;
-    canREG1->IF1ARB = 0x80000000U | 0x40000000U | 0x20000000U | ((11U & 0x1FFFFFFFU) << 0U) ;
+    //canREG1->IF1ARB = 0x80000000U | 0x40000000U | 0x20000000U | ((1U & 0x1FFFFFFFU) << 0U) ;
+    canREG1->IF1ARB = 0x80000000U | // Message is valid
+                      0x40000000U | // Message uses extended identifier
+                      0x20000000U | // Message is set for transmission
+                      id;
+
+
 
     // Configure message control register.
     //      UMask = 1 Use mask for filtering
@@ -190,12 +197,13 @@ static int csp_can_hercules_tx_frame (void * driver_data, uint32_t id,
     // Configure command register.
     //      Message number = 0x20 Message number is 0x20
     //canREG1->IF1CMD = 0x20 ;
-    canREG1->IF1CMD = 0x87U;
+    //canREG1->IF1CMD = 0x87U;
+    canREG1->IF1CMD = 0xB7U;
 
     for (i = 0U; i < 8U; i++)
     {
-        //canREG1->IF1DATx[s_canByteOrder[i]] = *data;
-        canREG1->IF1DATx[i] = *data;
+        canREG1->IF1DATx[s_canByteOrder[i]] = *data;
+        //canREG1->IF1DATx[i] = *data;
         data++;
     }
 
