@@ -192,7 +192,7 @@ static int csp_can_hercules_tx_frame (void * driver_data, uint32_t id,
     //      RxIE = 1 Enable receive interrupt
     //      DLC = 8 Set data length as 8
     //canREG1->IF1MCTL = 0x00001080U | 0x00000C00U | 8U ;
-    canREG1->IF1MCTL = 0x00001080U | 0x00000C00U | 8U ;
+    canREG1->IF1MCTL = 0x00001080U | 0x00000C00U | dlc ;
 
     // Configure command register.
     //      Message number = 0x20 Message number is 0x20
@@ -200,7 +200,7 @@ static int csp_can_hercules_tx_frame (void * driver_data, uint32_t id,
     //canREG1->IF1CMD = 0x87U;
     canREG1->IF1CMD = 0xB7U;
 
-    for (i = 0U; i < 8U; i++)
+    for (i = 0U; i < dlc; i++)
     {
         canREG1->IF1DATx[s_canByteOrder[i]] = *data;
         //canREG1->IF1DATx[i] = *data;
