@@ -229,3 +229,121 @@ static int csp_can_hercules_tx_frame (void * driver_data, uint32_t id,
 
 	return CSP_ERR_NONE;
 }
+
+/** @fn uint32 canGetData(canBASE_t *node, uint32 messageBox, uint8 * const data)
+*   @brief Gets received a CAN message
+*   @param[in] node Pointer to CAN node:
+*              - canREG1: CAN1 node pointer
+*              - canREG2: CAN2 node pointer
+*              - canREG3: CAN3 node pointer
+*              - canREG4: CAN4 node pointer
+*   @param[in] messageBox Message box number of CAN node:
+*              - canMESSAGE_BOX1: CAN message box 1
+*              - canMESSAGE_BOXn: CAN message box n [n: 1-64]
+*              - canMESSAGE_BOX64: CAN message box 64
+*   @param[out] data Pointer to store CAN RX data
+*   @return The function will return:
+*           - 0: When RX message box hasn't received new data
+*           - 1: When RX data are stored in the data buffer
+*           - 3: When RX data are stored in the data buffer and a message was lost
+*
+*   This function writes a CAN message into a CAN message box.
+*
+*/
+
+
+/* USER CODE BEGIN (9) */
+/* USER CODE END */
+
+/* SourceId : CAN_SourceId_003 */
+/* DesignId : CAN_DesignId_003 */
+/* Requirements : HL_CONQ_CAN_SR6 */
+uint32 canRxData(canBASE_t *node, uint32 messageBox, uint8 * const data)
+{
+    uint32       i;
+    uint32       size;
+    uint8 * pData    = data;
+    uint32       success  = 0U;
+    uint32       regIndex = (messageBox - 1U) >> 5U;
+    uint32       bitIndex = 1U << ((messageBox - 1U) & 0x1FU);
+
+/* USER CODE BEGIN (10) */
+/* USER CODE END */
+
+    /** - Check if new data have been arrived:
+    *     - no new data, return 0
+    *     - new data, get received message
+    */
+    if ((node->NWDATx[regIndex] & bitIndex) == 0U)
+    {
+        success = 0U;
+    }
+
+    else
+    {
+    /** - Wait until IF2 is ready for use */
+    /*SAFETYMCUSW 28 D MR:NA <APPROVED> "Potentially infinite loop found - Hardware Status check for execution sequence" */
+    while ((node->IF2STAT & 0x80U) ==0x80U)
+    {
+    } /* Wait */
+
+        /** - Configure IF2 for
+        *     - Message direction - Read
+        *     - Data Read
+        *     - Clears NewDat bit in the message object.
+        */
+        node->IF2CMD = 0x17U;
+
+    /** - Copy data into IF2 */
+    /*SAFETYMCUSW 93 S MR: 6.1,6.2,10.1,10.2,10.3,10.4 <APPROVED> "LDRA Tool issue" */
+    node->IF2NO = (uint8) messageBox;
+
+    /** - Wait until data are copied into IF2 */
+    /*SAFETYMCUSW 28 D MR:NA <APPROVED> "Potentially infinite loop found - Hardware Status check for execution sequence" */
+    while ((node->IF2STAT & 0x80U) ==0x80U)
+    {
+    } /* Wait */
+
+    /** - Get number of received bytes */
+    size = node->IF2MCTL & 0xFU;
+        if(size > 0x8U)
+        {
+            size = 0x8U;
+        }
+    /** - Copy RX data into destination buffer */
+    for (i = 0U; i < size; i++)
+    {
+#if ((__little_endian__ == 1) || (__LITTLE_ENDIAN__ == 1))
+        /*SAFETYMCUSW 45 D MR:21.1 <APPROVED> "Valid non NULL input parameters are only allowed in this driver" */
+        *pData = node->IF2DATx[i];
+        /*SAFETYMCUSW 45 D MR:21.1 <APPROVED> "Valid non NULL input parameters are only allowed in this driver" */
+        pData++;
+#else
+        /*SAFETYMCUSW 45 D MR:21.1 <APPROVED> "Valid non NULL input parameters are only allowed in this driver" */
+        //*pData = node->IF2DATx[s_canByteOrder[i]];
+        *pData = node->IF2DATx[i];
+        /*SAFETYMCUSW 45 D MR:21.1 <APPROVED> "Valid non NULL input parameters are only allowed in this driver" */
+        pData++;
+#endif
+    }
+
+    success = 1U;
+    }
+    /** - Check if data have been lost:
+    *     - no data lost, return 1
+    *     - data lost, return 3
+    */
+    if ((node->IF2MCTL & 0x4000U) == 0x4000U)
+    {
+        success = 3U;
+    }
+
+    /**   @note The function canInit has to be called before this function can be used.\n
+    *           The user is responsible to initialize the message box.
+    */
+
+/* USER CODE BEGIN (11) */
+/* USER CODE END */
+
+    return success;
+}
