@@ -29,6 +29,8 @@
 // libcsp
 #include <csp/csp_rtable.h>
 
+static const uint32 s_canByteOrder[8U] = {3U, 2U, 1U, 0U, 7U, 6U, 5U, 4U};
+
 // CAN interface data, state, etc.
 typedef struct {
 	char name[CSP_IFLIST_NAME_MAX + 1];
@@ -258,7 +260,7 @@ static int csp_can_hercules_tx_frame (void * driver_data, uint32_t id,
 /* SourceId : CAN_SourceId_003 */
 /* DesignId : CAN_DesignId_003 */
 /* Requirements : HL_CONQ_CAN_SR6 */
-uint32 canRxData(canBASE_t *node, uint32 messageBox, uint8 * const data)
+uint32 canRxData(canBASE_t *node, uint32 messageBox, uint32 * const header, uint8 * const data)
 {
     uint32       i;
     uint32       size;
@@ -292,7 +294,8 @@ uint32 canRxData(canBASE_t *node, uint32 messageBox, uint8 * const data)
         *     - Data Read
         *     - Clears NewDat bit in the message object.
         */
-        node->IF2CMD = 0x17U;
+        //node->IF2CMD = 0x17U;
+        node->IF2CMD = 0x77U;
 
     /** - Copy data into IF2 */
     /*SAFETYMCUSW 93 S MR: 6.1,6.2,10.1,10.2,10.3,10.4 <APPROVED> "LDRA Tool issue" */
@@ -320,12 +323,15 @@ uint32 canRxData(canBASE_t *node, uint32 messageBox, uint8 * const data)
         pData++;
 #else
         /*SAFETYMCUSW 45 D MR:21.1 <APPROVED> "Valid non NULL input parameters are only allowed in this driver" */
-        //*pData = node->IF2DATx[s_canByteOrder[i]];
-        *pData = node->IF2DATx[i];
+        *pData = node->IF2DATx[s_canByteOrder[i]];
+        //*pData = node->IF2DATx[i];
         /*SAFETYMCUSW 45 D MR:21.1 <APPROVED> "Valid non NULL input parameters are only allowed in this driver" */
         pData++;
 #endif
     }
+
+    //*header = (uint32) node->IF2ARB - 0xC0000000U;
+    *header = (uint32) node->IF2ARB & 0x0FFFFFFFU;
 
     success = 1U;
     }

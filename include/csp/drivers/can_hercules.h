@@ -45,6 +45,6 @@ static void csp_hercules_can_rx_task(void * pvParameters);
 /*
  * canRxData interrupt service routine
  */
-uint32 canRxData(canBASE_t *node, uint32 messageBox, uint8 * const data);
+uint32 canRxData(canBASE_t *node, uint32 messageBox, uint32 * const header, uint8 * const data);
 
 

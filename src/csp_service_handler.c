@@ -253,7 +253,11 @@ void csp_service_handler(csp_conn_t * conn, csp_packet_t * packet) {
 
 		/* Retrieve the tasklist */
 		csp_sys_tasklist(pslist);
+#ifndef CSP_HERCULES
 		int pslen = strnlen(pslist, task_list_size);
+#else
+		int pslen = strlen(pslist) - 1;
+#endif
 
 		/* Split the potentially very long string into packets */
 		int i = 0;
