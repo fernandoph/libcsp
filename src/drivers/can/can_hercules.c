@@ -40,12 +40,33 @@ typedef struct {
 	// pthread_t rx_thread; TODO: Implement this
 } can_context_t;
 
+static can_context_t * ctx = NULL;
+
 #define CSP_CAN_RX_TASK_NAME "CSP_CAN_RX"
 #define CSP_CAN_RX_TASK_STACK_SIZE 512
 
 static TaskHandle_t rxTaskHandler = NULL;
 static StaticTask_t rxTaskTCB;
 static StackType_t rxTaskStackBuffer[CSP_CAN_RX_TASK_STACK_SIZE];
+
+// Can related
+#define D_COUNT  8
+
+// CAN RX data
+uint32 cnt=0, error =0, tx_done =0;
+uint8 tx_data1[D_COUNT] = {1,2,3,4,5,6,7,8};
+uint8 tx_data2[D_COUNT] = {11,12,13,14,15,16,17,18};
+uint8 tx_data3[D_COUNT] = {21,22,23,24,25,26,27,28};
+uint8 tx_data4[D_COUNT] = {31,32,33,34,35,36,37,38};
+
+uint32 rx_header = 0;
+uint8 rx_data1[D_COUNT] = {0};
+uint8 rx_data2[D_COUNT] = {0};
+uint8 rx_data3[D_COUNT] = {0};
+uint8 rx_data4[D_COUNT] = {0};
+
+uint8 *dptr=0;
+
 
 // Implementation of strtok_r, which is not implemented as default in CCS12
 char *
@@ -90,7 +111,9 @@ int csp_can_hercules_add_interface ( const char * ifname,
                                             canBASE_t  * canRegister, 
                                             uint8_t      canMessageBox)
 {
-    can_context_t * ctx = calloc((size_t) 1, sizeof(*ctx));
+    //can_context_t * ctx = calloc((size_t) 1, sizeof(*ctx));
+    // Allocate memory for context using calloc
+    ctx = calloc((size_t) 1, sizeof(*ctx));
     if (ctx == NULL) {
             return CSP_ERR_NOMEM;
         }
@@ -269,12 +292,9 @@ uint32 canRxData(canBASE_t *node, uint32 messageBox, uint32 * const header, uint
     uint32       regIndex = (messageBox - 1U) >> 5U;
     uint32       bitIndex = 1U << ((messageBox - 1U) & 0x1FU);
 
-/* USER CODE BEGIN (10) */
-/* USER CODE END */
-
     /** - Check if new data have been arrived:
-    *     - no new data, return 0
-    *     - new data, get received message
+    *   - no new data, return 0
+    *   - new data, get received message
     */
     if ((node->NWDATx[regIndex] & bitIndex) == 0U)
     {
@@ -289,13 +309,12 @@ uint32 canRxData(canBASE_t *node, uint32 messageBox, uint32 * const header, uint
     {
     } /* Wait */
 
-        /** - Configure IF2 for
-        *     - Message direction - Read
-        *     - Data Read
-        *     - Clears NewDat bit in the message object.
-        */
-        //node->IF2CMD = 0x17U;
-        node->IF2CMD = 0x77U;
+    /** - Configure IF2 for
+    *     - Message direction - Read
+    *     - Data Read
+    *     - Clears NewDat bit in the message object.
+    */
+    node->IF2CMD = 0x77U;
 
     /** - Copy data into IF2 */
     /*SAFETYMCUSW 93 S MR: 6.1,6.2,10.1,10.2,10.3,10.4 <APPROVED> "LDRA Tool issue" */
@@ -309,10 +328,10 @@ uint32 canRxData(canBASE_t *node, uint32 messageBox, uint32 * const header, uint
 
     /** - Get number of received bytes */
     size = node->IF2MCTL & 0xFU;
-        if(size > 0x8U)
-        {
-            size = 0x8U;
-        }
+    if(size > 0x8U)
+    {
+        size = 0x8U;
+    }
     /** - Copy RX data into destination buffer */
     for (i = 0U; i < size; i++)
     {
@@ -330,7 +349,6 @@ uint32 canRxData(canBASE_t *node, uint32 messageBox, uint32 * const header, uint
 #endif
     }
 
-    //*header = (uint32) node->IF2ARB - 0xC0000000U;
     *header = (uint32) node->IF2ARB & 0x0FFFFFFFU;
 
     success = 1U;
@@ -344,12 +362,30 @@ uint32 canRxData(canBASE_t *node, uint32 messageBox, uint32 * const header, uint
         success = 3U;
     }
 
-    /**   @note The function canInit has to be called before this function can be used.\n
-    *           The user is responsible to initialize the message box.
-    */
-
-/* USER CODE BEGIN (11) */
-/* USER CODE END */
-
     return success;
+}
+
+void canMessageNotification(canBASE_t *node, uint32 messageBox)
+{
+    // Return value of canRxData
+    uint32 rxSuccess = 0U;
+    long task_woken = pdTRUE;
+
+    if(node==canREG1)
+    {
+        rxSuccess = canRxData(canREG1, canMESSAGE_BOX2, (uint32 * ) &rx_header, (uint8 * )&rx_data1[0]); /* copy to RAM */
+        if (rxSuccess == 1U)
+        {
+            cnt++;
+            csp_can_rx(&ctx->iface, rx_header, rx_data1, 8, &task_woken);
+        }
+        else if (rxSuccess == 3U)
+        {
+            error++;
+        }
+        else
+        {
+            /* No data received */
+        }
+    }
 }

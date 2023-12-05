@@ -13,7 +13,7 @@
 #define CSP_RTABLE_SIZE 10
 #define CSP_ENABLE_CSP_PRINT 1
 #define CSP_PRINT_STDIO 1
-#define CSP_USE_RDP 0
+#define CSP_USE_RDP 1
 #define CSP_USE_HMAC 0
 #define CSP_USE_PROMISC 0
 #define CSP_USE_DEDUP 0
