@@ -25,6 +25,7 @@
 #include "HL_esm.h"
 #include "HL_sys_core.h"
 #include "HL_reg_can.h"
+#include "HL_hw_emac.h"
 
 // libcsp
 #include <csp/csp_rtable.h>
@@ -66,7 +67,6 @@ uint8 rx_data3[D_COUNT] = {0};
 uint8 rx_data4[D_COUNT] = {0};
 
 uint8 *dptr=0;
-
 
 // Implementation of strtok_r, which is not implemented as default in CCS12
 char *
@@ -182,7 +182,6 @@ static int csp_can_hercules_tx_frame (void * driver_data, uint32_t id,
     uint8_t i;
     can_context_t * ctx = driver_data;
     const uint32 s_canByteOrder[8U] = {3U, 2U, 1U, 0U, 7U, 6U, 5U, 4U};
-    vTaskDelay(1);
 
     while (canIsTxMessagePending(canREG1, canMESSAGE_BOX1) != 0)
     {
