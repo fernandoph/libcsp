@@ -182,6 +182,11 @@ static int csp_can_hercules_tx_frame (void * driver_data, uint32_t id,
     uint8_t i;
     can_context_t * ctx = driver_data;
     const uint32 s_canByteOrder[8U] = {3U, 2U, 1U, 0U, 7U, 6U, 5U, 4U};
+    vTaskDelay(1);
+
+    while (canIsTxMessagePending(canREG1, canMESSAGE_BOX1) != 0)
+    {
+    }
 
 //    canTransmit(canREG1, canMESSAGE_BOX1, (uint8 * )&data); /* copy to RAM */
 //    return CSP_ERR_NONE;
@@ -283,11 +288,12 @@ static int csp_can_hercules_tx_frame (void * driver_data, uint32_t id,
 /* SourceId : CAN_SourceId_003 */
 /* DesignId : CAN_DesignId_003 */
 /* Requirements : HL_CONQ_CAN_SR6 */
-uint32 canRxData(canBASE_t *node, uint32 messageBox, uint32 * const header, uint8 * const data)
+uint32 canRxData(canBASE_t *node, uint32 messageBox, uint32 * header, uint8 * data, uint8 *dlc)
 {
     uint32       i;
     uint32       size;
     uint8 * pData    = data;
+    uint32 pId;
     uint32       success  = 0U;
     uint32       regIndex = (messageBox - 1U) >> 5U;
     uint32       bitIndex = 1U << ((messageBox - 1U) & 0x1FU);
@@ -332,6 +338,7 @@ uint32 canRxData(canBASE_t *node, uint32 messageBox, uint32 * const header, uint
     {
         size = 0x8U;
     }
+    *dlc = size;
     /** - Copy RX data into destination buffer */
     for (i = 0U; i < size; i++)
     {
@@ -349,7 +356,7 @@ uint32 canRxData(canBASE_t *node, uint32 messageBox, uint32 * const header, uint
 #endif
     }
 
-    *header = (uint32) node->IF2ARB & 0x0FFFFFFFU;
+    *header = (node->IF2ARB & 0x3FFFFFFFU);
 
     success = 1U;
     }
@@ -370,14 +377,15 @@ void canMessageNotification(canBASE_t *node, uint32 messageBox)
     // Return value of canRxData
     uint32 rxSuccess = 0U;
     long task_woken = pdTRUE;
+    uint8 dlc;
 
     if(node==canREG1)
     {
-        rxSuccess = canRxData(canREG1, canMESSAGE_BOX2, (uint32 * ) &rx_header, (uint8 * )&rx_data1[0]); /* copy to RAM */
+        rxSuccess = canRxData(canREG1, canMESSAGE_BOX2, (uint32 * ) &rx_header, (uint8 * )&rx_data1[0], &dlc); /* copy to RAM */
         if (rxSuccess == 1U)
         {
             cnt++;
-            csp_can_rx(&ctx->iface, rx_header, rx_data1, 8, &task_woken);
+            csp_can_rx(&ctx->iface, rx_header, rx_data1, dlc, &task_woken);
         }
         else if (rxSuccess == 3U)
         {

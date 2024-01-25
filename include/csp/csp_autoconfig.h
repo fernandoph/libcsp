@@ -19,6 +19,7 @@
 #define CSP_USE_DEDUP 0
 #define CSP_HERCULES 1
 #define CSP_BIG_ENDIAN 1
-#define CSP_ROUTE_STATIC 1
+//#define CSP_ROUTE_STATIC 1
+#define CSP_ROUTE_CIDR 1
 /* #undef CSP_ROUTE_CIDR */
-
+#define CSP_USE_CRC32 1

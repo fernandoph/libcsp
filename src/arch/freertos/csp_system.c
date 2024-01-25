@@ -33,7 +33,9 @@ int csp_sys_tasklist(char * out) {
 #if (tskKERNEL_VERSION_MAJOR < 8)
 	vTaskList((signed portCHAR *) out);
 #else
+#if TASKLISTAVAIL
 	vTaskList(out);
+#endif
 #endif
 	return CSP_ERR_NONE;
 }
