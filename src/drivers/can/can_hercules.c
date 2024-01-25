@@ -12,7 +12,7 @@
 #include <csp/csp_types.h>
 #include <csp/drivers/can_hercules.h>
 
-#include <csptests.h>
+#include <epic_csp.h>
 
 // FreeRTOS
 #include "FreeRTOS.h"
