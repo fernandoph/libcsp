@@ -24,6 +24,10 @@
 
 #define CSP_MYADDRESS 10
 
+
+// Miscellaneous functions not implemented in CCS
+char * strtok_r (char *s, const char *delim, char **save_ptr);
+
 /*
     Initialize CAN driver
 */
@@ -48,9 +52,9 @@ static int csp_can_hercules_tx_frame (void * driver_data, uint32_t id,
 uint32 canRxData(canBASE_t *node, uint32 messageBox, uint32 * header, uint8 * data, uint8 *dlc);
 
 /*
-* Epic_canInit
+* Hercules Can Init
 */
-void epic_can_init(void);
+void hercules_can_init(void);
 
 
 
