@@ -41,7 +41,7 @@ static int csp_rtable_parse(const char * rtable, int dry_run) {
 #else
 	const size_t str_len = strlen(rtable);
 #endif
-	char rtable_copy[str_len + 1];
+	char rtable_copy[32];
 	strncpy(rtable_copy, rtable, str_len);
 	rtable_copy[str_len] = 0;        
 

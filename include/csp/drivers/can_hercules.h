@@ -17,6 +17,11 @@
 #include "HL_sys_core.h"
 #include "HL_reg_can.h"
 
+#include <csp/csp.h>
+#include <csp/interfaces/csp_if_can.h>
+#include <csp/csp_iflist.h>
+#include <csp/csp_types.h>
+
 #define CSP_MYADDRESS 10
 
 /*
@@ -34,13 +39,8 @@ int csp_can_hercules_add_interface ( const char * ifname,
 /* 
     Transmit CAN frame
 */
-static int csp_can_hercules_tx_frame (void * driver_data, uint32_t id, 
+static int csp_can_hercules_tx_frame (void * driver_data, uint32_t id,
                                      const uint8_t * data, uint8_t dlc);
-
-/* 
-    Receive CAN task
-*/
-static void csp_hercules_can_rx_task(void * pvParameters);
 
 /*
  * canRxData interrupt service routine

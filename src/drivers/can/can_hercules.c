@@ -12,7 +12,7 @@
 #include <csp/csp_types.h>
 #include <csp/drivers/can_hercules.h>
 
-#include <epic_csp.h>
+//#include <epic_csp.h>
 
 // FreeRTOS
 #include "FreeRTOS.h"
@@ -41,14 +41,10 @@ typedef struct {
 	// pthread_t rx_thread; TODO: Implement this
 } can_context_t;
 
-static can_context_t * ctx = NULL;
+can_context_t * ctx = NULL;
 
 #define CSP_CAN_RX_TASK_NAME "CSP_CAN_RX"
 #define CSP_CAN_RX_TASK_STACK_SIZE 512
-
-static TaskHandle_t rxTaskHandler = NULL;
-static StaticTask_t rxTaskTCB;
-static StackType_t rxTaskStackBuffer[CSP_CAN_RX_TASK_STACK_SIZE];
 
 // Can related
 #define D_COUNT  8
@@ -107,16 +103,16 @@ strtok_r (char *s, const char *delim, char **save_ptr)
     @param[in] canMessageBox CAN message box
     @return 0 on success, -1 on error
 */
-int csp_can_hercules_add_interface ( const char * ifname,
-                                            canBASE_t  * canRegister, 
-                                            uint8_t      canMessageBox)
+int csp_can_hercules_add_interface (const char * ifname,
+                                    canBASE_t  * canRegister,
+                                    uint8_t      canMessageBox)
 {
     //can_context_t * ctx = calloc((size_t) 1, sizeof(*ctx));
     // Allocate memory for context using calloc
     ctx = calloc((size_t) 1, sizeof(*ctx));
     if (ctx == NULL) {
             return CSP_ERR_NOMEM;
-        }
+    }
     int res = -1;
 
     strncpy(ctx->name, ifname, sizeof(ctx->name) - 1);
@@ -125,44 +121,12 @@ int csp_can_hercules_add_interface ( const char * ifname,
     ctx->iface.interface_data = &ctx->ifdata;
     ctx->iface.driver_data = ctx;
     ctx->ifdata.tx_func = csp_can_hercules_tx_frame;
-//    ctx->ifdata.pbufs = NULL;
 
+    res = csp_can_add_interface(&ctx->iface);
 
-    // call csp_iflist_add(csp_iface_t * ifc) here
-
-    /*
-    * Create rx task
-    */
-    rxTaskHandler = xTaskCreateStatic(csp_hercules_can_rx_task,
-                                        CSP_CAN_RX_TASK_NAME, 
-                                        CSP_CAN_RX_TASK_STACK_SIZE,
-                                        NULL, FREE_RTOS_TASK_PRIORITY_CANRX,
-                                        rxTaskStackBuffer, &rxTaskTCB);
-
-    if (rxTaskHandler != NULL)
-    {
-        ctx->rxTaskHandler = rxTaskHandler;
-        // Para libscp for gomspace
-        res = csp_can_add_interface(&ctx->iface);
-
-        csp_rtable_set(CSP_DEFAULT_ROUTE, 0, &ctx->iface, CSP_NO_VIA_ADDRESS);
-        //csp_rtable_set(0, 0, &ctx->iface, CSP_NO_VIA_ADDRESS);
-        // Para libcsp de libcsp.org usamos esto
-        // Set this as the default interface
-      // csp_iflist_set_default(&ctx->iface);
-    }
+    //csp_rtable_set(CSP_DEFAULT_ROUTE, 0, &ctx->iface, CSP_NO_VIA_ADDRESS);
 
     return res;    
-}
-
-static void csp_hercules_can_rx_task(void * pvParameters)
-{
-
-    //canUpdateID(canREG1, canMESSAGE_BOX1, 0x30000004);
-    while(1)
-    {
-        vTaskDelay(1000);
-    }
 }
 
 /*
