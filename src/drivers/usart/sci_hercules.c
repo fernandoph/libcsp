@@ -33,19 +33,15 @@
 // Array to store contexts for each SCI
 static sci_hercules_context_t *sci_contexts[4] = {NULL, NULL, NULL, NULL};  // One for each SCIx
 
-// SCIFLR flags used for polled transmit.
+// SCIFLR flag used for the polled transmit.
 #define SCI_HERCULES_FLR_TXRDY    ((uint32)SCI_TX_INT)             // Bit 8: TD buffer ready for next byte.
-#define SCI_HERCULES_FLR_TXEMPTY  ((uint32)((uint32)1U << 11U))    // Bit 11: transmit shift register drained.
-
-// Driver Enable (DE) GPIO of the SCI1 RS-485 transceiver. Board-specific (CUB): mibspiPORT1[9].
-#define SCI_HERCULES_DE_PORT      mibspiPORT1
-#define SCI_HERCULES_DE_BIT       9U
 
 
 // Per-byte writer used as the KISS tx_func. csp_kiss_tx() calls this once per byte / escape
 // sequence, so it must be a blocking, polled write: an interrupt-driven sciSend() must not be
 // re-armed until its previous transfer completes, and successive calls would clobber the in-flight
-// transfer. The DE line is driven at frame scope by sci_hercules_kiss_tx(), so it is not touched here.
+// transfer. RS-422 full-duplex: the transceiver driver is permanently enabled in hardware, so there
+// is no DE line to manage here.
 int sci_hercules_tx(void *driver_data, const unsigned char * data, size_t data_length)
 {
     sci_hercules_context_t *ctx = driver_data;
@@ -59,24 +55,6 @@ int sci_hercules_tx(void *driver_data, const unsigned char * data, size_t data_l
     }
 
     return CSP_ERR_NONE;
-}
-
-
-// Frame-level nexthop wrapper. Asserts the RS-485 driver enable for the whole KISS frame, lets
-// csp_kiss_tx() stream the framed bytes through sci_hercules_tx(), then waits for the shift
-// register to drain (TX EMPTY) before releasing the driver, so the last byte is not truncated and
-// the half-duplex bus is returned to receive.
-static int sci_hercules_kiss_tx(const csp_route_t * ifroute, csp_packet_t * packet)
-{
-    sci_hercules_context_t *ctx = ifroute->iface->driver_data;
-    int res;
-
-    gioSetBit(SCI_HERCULES_DE_PORT, SCI_HERCULES_DE_BIT, 1);   // DE on (transmit).
-    res = csp_kiss_tx(ifroute, packet);
-    while ((ctx->sci_base->FLR & SCI_HERCULES_FLR_TXEMPTY) == 0U) { /* wait TX EMPTY */ }
-    gioSetBit(SCI_HERCULES_DE_PORT, SCI_HERCULES_DE_BIT, 0);   // DE off (receive).
-
-    return res;
 }
 
 
@@ -132,10 +110,6 @@ int csp_sci_hercules_init(const char *name, sciBASE_t *sci_base, csp_iface_t **r
         csp_free(ctx);
         return res;
     }
-
-    // csp_kiss_add_interface() sets nexthop = csp_kiss_tx. Override it with the frame-level wrapper
-    // that drives the RS-485 DE line around the whole KISS frame.
-    ctx->iface.nexthop = sci_hercules_kiss_tx;
 
     if (return_iface)
     {
