@@ -129,6 +129,11 @@ int csp_can_hercules_add_interface (const char * ifname,
     @param[in] dlc Data length code
     @return 0 on success, -1 on error
 */
+// Coarse safety bound (spin-count) for the CAN TX completion waits below. Sized well above a normal
+// CAN frame time; only reached when the bus is disconnected / in bus-off, where the message would
+// otherwise stay pending forever.
+#define CSP_CAN_HERCULES_TX_GUARD  200000U
+
 static int csp_can_hercules_tx_frame (void * driver_data, uint32_t id,
                                       const uint8_t * data, uint8_t dlc)
 {
@@ -138,13 +143,28 @@ static int csp_can_hercules_tx_frame (void * driver_data, uint32_t id,
     uint8_t i;
     can_context_t * ctx = driver_data;
     const uint32 s_canByteOrder[8U] = {3U, 2U, 1U, 0U, 7U, 6U, 5U, 4U};
+    uint32_t guard;
 
+    // Bounded wait for the previous transmission to complete. With the CAN bus disconnected or in
+    // bus-off (no ACK), the message stays pending forever; an unbounded wait here would spin the
+    // caller (the CSP router task) indefinitely and hang the whole node, taking down KISS and local
+    // delivery too. Time out and drop the frame instead so the rest of the stack keeps running.
+    guard = CSP_CAN_HERCULES_TX_GUARD;
     while (canIsTxMessagePending(canREG1, canMESSAGE_BOX1) != 0)
     {
+        if (--guard == 0U)
+        {
+            return CSP_ERR_TIMEDOUT;
+        }
     }
 
+    guard = CSP_CAN_HERCULES_TX_GUARD;
     while ((canREG1->IF1STAT & 0x80U) ==0x80U)
     {
+        if (--guard == 0U)
+        {
+            return CSP_ERR_TIMEDOUT;
+        }
     } /* Wait */
 
     // Configure mask register.
